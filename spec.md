@@ -76,17 +76,79 @@ Translate every fixed brief requirement and the selected research-driven feature
 
 Define the weather inputs, recommendation categories, coded rules, and shared state. Weather values must come from the provider, and rules must follow the weather guidance cited in `research.md`. The selected location, date, and live weather data must produce one recommendation state that drives every visual and written output.
 
+```
+Inputs (from Open-Meteo, per location + date):
+  - temperature (°F)
+  - UV index
+  - precipitation probability (%)
+  - heat index (°F) [derived from temp + humidity]
+  - condition code (clear/cloudy/rain/snow/etc., for the weather icon)
+
+Coded rules:
+  outfitCategory =
+    temp < 45  -> "cold"
+    45-60      -> "cool"
+    60-75      -> "mild"
+    75+        -> "hot"
+
+  reminders = [
+    "umbrella"  if precipProbability >= 40
+    "sunscreen" if uvIndex >= 3
+    "hydration" if heatIndex >= 90
+  ]
+
+Recommendation state (one object per location+date, seeded so re-visits match):
+  {
+    outfitCategory,       // drives character art + written text pool
+    outfitVariantIndex,   // 0-2, random but stored
+    reminders[],          // each with its own wordingVariantIndex, 0-2, random but stored
+    conditionCode,        // drives weather icon
+    isForecast: bool      // true if date != today
+  }
+```
+
+This single state object is what both the character display and the written/reminder text read from — nothing else independently decides what to show. The `outfitVariantIndex` and each reminder's `wordingVariantIndex` are generated once (via a seeded random keyed on `location+date`) and stored in localStorage, so revisiting the same date — even after a reload — reproduces the same state instead of re-rolling.
+
 ## Content variation
 
 Define at least three outfit variations for each recommendation category and at least three wording variations for each reminder type. Define how outfit and reminder variations are chosen independently at random, and how a previously selected date keeps the same variations, including whether they persist after the page reloads.
+
+- 4 outfit categories (Cold/Cool/Mild/Hot) × 3 outfit-art variations each = 12 outfit assets, plus 3 written-recommendation wordings per category.
+- 3 reminder types (umbrella/sunscreen/hydration) × 3 wording variations each.
+- Each variation (`outfitVariantIndex`, each reminder's `wordingVariantIndex`) is chosen independently at random the first time a given location+date is viewed, then stored in localStorage keyed on `location+date`. Revisiting that same date — including after a full page reload — reads the stored indices instead of re-rolling, so the same outfit and wording always reappear for that date.
 
 ## Assets
 
 List every art and graphical asset: the character, each outfit variation, icons, and any other visuals. For each, note where it appears, its format, and whether it will be created, generated, or licensed, with its credit or license.
 
+All assets below: AI-generated (sketched/hand-drawn illustration style per research.md's Visual direction decision), PNG with transparent background, credited on the info screen as "AI-generated" with the generating tool named.
+
+| Asset | Count | Appears on |
+|---|---|---|
+| Base character | 1 | Main screen |
+| Outfit variations (Cold) | 3 | Main screen, character display |
+| Outfit variations (Cool) | 3 | Main screen, character display |
+| Outfit variations (Mild) | 3 | Main screen, character display |
+| Outfit variations (Hot) | 3 | Main screen, character display |
+| Hidden Halloween outfit | 1 | Main screen, double-tap easter egg |
+| Weather condition icons (clear, cloudy, rain, snow, thunderstorm, fog) | 6 | Main screen, near temp/condition |
+| Reminder icons (umbrella, sunscreen, hydration) | 3 | Main screen, reminder callout |
+| UI chrome icons (location pin, calendar/date, back arrow, info (i)) | 4 | Main + info screens |
+
+Total: 27 distinct sketched-style assets.
+
 ## Out of scope
 
 Record features intentionally excluded from this project.
+
+- Non-US locations
+- Forecast dates beyond 7 days
+- User accounts, login, or cross-device sync (only on-device, most-recent-location storage)
+- Multiple saved/favorite locations or location history
+- Manual outfit customization (outfits are always weather-driven, never user-picked, unlike WeatherFit's approach)
+- Push notifications or scheduled reminders
+- Offline support / cached forecasts without connectivity
+- Languages other than English
 
 ## Revisions
 

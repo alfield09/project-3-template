@@ -26,6 +26,25 @@ During implementation, follow the approved plan in working checkpoints and keep 
 
 Summarize the structure, data flow, dependencies, task order, and main risks.
 
+**Stack:** Plain HTML/CSS/JS, no framework or build step — deploys directly to GitHub Pages. Two static pages (`index.html` for the main screen, `info.html` for the info screen), sharing a CSS file and JS modules.
+
+**Structure:**
+- `index.html` / `info.html` — markup for each screen
+- `styles.css` — shared styles, including responsive breakpoints (phone vs. laptop) and accessible touch-target/contrast rules
+- `js/weather.js` — fetches geocoding (city/zip → lat/lon via Open-Meteo's free Geocoding API) and forecast data from Open-Meteo
+- `js/recommendation.js` — turns weather data into the recommendation state object (outfitCategory, variant indices, reminders) defined in `spec.md`
+- `js/storage.js` — reads/writes the most-recent location and the per-date recommendation state to localStorage
+- `js/main.js` — wires up the main screen UI to the above modules
+- `assets/` — the 27 AI-generated art assets listed in `spec.md`
+
+**Data flow:** user location/date input → geocode (if manual entry) → fetch Open-Meteo forecast → compute recommendation state → store in localStorage keyed by location+date → render character art, weather icon, written text, and reminders from that one state object.
+
+**Dependencies:** Open-Meteo weather API, Open-Meteo Geocoding API, browser Geolocation API, localStorage. No npm packages required.
+
+**Task order:** static layout first (both screens, both screen sizes) using placeholder art and mock data, then wire up real weather data, then recommendation logic and content variation, then persistence, then error/loading/permission states, then accessibility pass, then deploy, then usability testing.
+
+**Main risks:** Open-Meteo Geocoding API may return ambiguous matches for common city names (needs a disambiguation step, e.g. showing state alongside city); AI-generated art taking longer than expected if initial generations don't match the sketched style consistently; localStorage key design needs to handle both "today" (which changes meaning day-to-day) and fixed forecast dates without collisions.
+
 ## Checklist
 
 ### Approvals
@@ -37,7 +56,22 @@ Summarize the structure, data flow, dependencies, task order, and main risks.
 ### Build
 
 - [ ] Create or source the assets listed in `spec.md`, starting early
-- [ ] Replace this line with ordered tasks that name the result of each step
+- [ ] Scaffold the project (`index.html`, `info.html`, `styles.css`, `js/` modules, `assets/` folder)
+- [ ] Build the main screen's static layout for phone, using placeholder art, matching IMG_0205
+- [ ] Build the main screen's static layout for laptop, using placeholder art, matching IMG_0204
+- [ ] Build the info screen's static layout (shared across phone/laptop), matching IMG_0206
+- [ ] Implement manual location entry with geocoding (Open-Meteo Geocoding API)
+- [ ] Implement device geolocation entry, requested only on explicit user action
+- [ ] Implement date selection (today + up to 7 forecast days)
+- [ ] Fetch current and forecast weather data from Open-Meteo for the selected location/date
+- [ ] Implement the recommendation-state logic (outfit category, reminder thresholds) per `spec.md`
+- [ ] Implement independently-randomized outfit and reminder wording variation, seeded per location+date
+- [ ] Implement localStorage persistence for most-recent location and per-date recommendation state
+- [ ] Swap in the real AI-generated art assets for the character, outfits, and icons
+- [ ] Implement the hidden Halloween outfit (double-tap easter egg)
+- [ ] Implement loading, API-error/retry, and denied-geolocation-permission states
+- [ ] Fill in the info screen's real content (creator, data source, methodology, privacy, art credits)
+- [ ] Pass an accessibility check (touch-target size, contrast) on both screens and sizes
 - [ ] Use the approved screen drawings to guide layout and interaction work
 - [ ] Keep one recommendation state driving every visual and written output
 - [ ] Test and fix each checkpoint against the specification before starting the next
@@ -65,6 +99,18 @@ Summarize the structure, data flow, dependencies, task order, and main risks.
 ## Usability testing
 
 Before testing, record the purpose, a few realistic tasks, non-leading prompts, and a consistent note format. For each session, use a non-identifying label and record the task, what the tester did or said, successes, barriers or questions, and possible changes. Keep observations separate from interpretations. After all three sessions, summarize the strongest findings and the improvement they support.
+
+**Purpose:** Check whether a first-time user understands the outfit recommendation at a glance, can find/change location and date without help, and notices reminders when shown.
+
+**Tasks (give one at a time, no hints):**
+1. "Open the app and tell me what it's telling you to wear today, and why."
+2. "Check what the app recommends for [a date 3–4 days out]."
+3. "Change the location to a different US city."
+4. "Find out where the weather data comes from."
+
+**Non-leading prompts if stuck:** "What would you try next?" / "What are you looking for right now?" — avoid pointing at buttons.
+
+**Note format per session:** tester label (e.g., P1/P2/P3), task, what they did/said (observation), success or barrier (fact), possible change (interpretation, kept separate from the observation).
 
 ## Revisions
 
